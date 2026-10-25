@@ -31,20 +31,8 @@ function Remove-DtdReference($filePath) {
 
 Remove-DtdReference $tempPath
 
-# Проверяем, существует ли локальный файл и не является ли он битым / LFS-указателем
-$isValidLocal = $false
-if (Test-Path $localPath) {
-    $firstLine = Get-Content $localPath -TotalCount 1
-    if ($firstLine -and $firstLine.Trim().StartsWith("<?xml")) {
-        $isValidLocal = $true
-    } else {
-        Write-Host "Local file is not a valid XML (might be LFS pointer). Removing it." -ForegroundColor Yellow
-        Remove-Item $localPath -Force
-    }
-}
-
-if (-not $isValidLocal) {
-    Write-Host "Local file not found or invalid. Moving temp to local." -ForegroundColor Green
+if (-not (Test-Path $localPath)) {
+    Write-Host "Local file not found. Moving temp to local." -ForegroundColor Green
     Move-Item $tempPath $localPath -Force
     exit
 }
@@ -91,7 +79,7 @@ while ($readerOld.Read()) {
 }
 $readerOld.Close()
 
-# 3. Дописываем новые уникальные программы из свежего файла
+# 3. Дописываем новые уникальные программы из свежего файла (используя правильный поток $readerNew)
 $readerNew = [System.Xml.XmlReader]::Create($tempPath, $settings)
 $addedCount = 0
 while ($readerNew.Read()) {
@@ -101,21 +89,13 @@ while ($readerNew.Read()) {
         if ($start -gt $cutoffDate) {
             $key = $channel + "_" + $start
             if ($existingKeys.Add($key)) {
-                $writer.WriteNode($readerNew, $false)
+                $writer.WriteNode($readerNew, $false) # <-- Исправлено на $readerNew
                 $addedCount++
             }
         }
     }
 }
 $readerNew.Close()
-
-# Вставка тестовой передачи на 16 октября для проверки
-$writer.WriteStartElement("programme")
-$writer.WriteAttributeString("start", "20261016120000 +0300")
-$writer.WriteAttributeString("stop", "20261016130000 +0300")
-$writer.WriteAttributeString("channel", "pervy")
-$writer.WriteElementString("title", "!!! ТЕСТОВЫЙ АРХИВ 16 ОКТЯБРЯ !!!")
-$writer.WriteEndElement()
 
 $writer.WriteEndElement()
 $writer.WriteEndDocument()
