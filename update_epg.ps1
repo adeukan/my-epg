@@ -31,8 +31,20 @@ function Remove-DtdReference($filePath) {
 
 Remove-DtdReference $tempPath
 
-if (-not (Test-Path $localPath)) {
-    Write-Host "Local file not found. Moving temp to local." -ForegroundColor Green
+# Проверяем, существует ли локальный файл и не является ли он битым / LFS-указателем
+$isValidLocal = $false
+if (Test-Path $localPath) {
+    $firstLine = Get-Content $localPath -TotalCount 1
+    if ($firstLine -and $firstLine.Trim().StartsWith("<?xml")) {
+        $isValidLocal = $true
+    } else {
+        Write-Host "Local file is not a valid XML (might be LFS pointer). Removing it." -ForegroundColor Yellow
+        Remove-Item $localPath -Force
+    }
+}
+
+if (-not $isValidLocal) {
+    Write-Host "Local file not found or invalid. Moving temp to local." -ForegroundColor Green
     Move-Item $tempPath $localPath -Force
     exit
 }
