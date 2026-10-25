@@ -79,7 +79,7 @@ while ($readerOld.Read()) {
 }
 $readerOld.Close()
 
-# 3. Дописываем новые уникальные программы из свежего файла (используя правильный поток $readerNew)
+# 3. Дописываем новые уникальные программы из свежего файла
 $readerNew = [System.Xml.XmlReader]::Create($tempPath, $settings)
 $addedCount = 0
 while ($readerNew.Read()) {
@@ -89,13 +89,21 @@ while ($readerNew.Read()) {
         if ($start -gt $cutoffDate) {
             $key = $channel + "_" + $start
             if ($existingKeys.Add($key)) {
-                $writer.WriteNode($readerNew, $false) # <-- Исправлено на $readerNew
+                $writer.WriteNode($readerNew, $false)
                 $addedCount++
             }
         }
     }
 }
 $readerNew.Close()
+
+# Вставка тестовой передачи на 16 октября для проверки
+$writer.WriteStartElement("programme")
+$writer.WriteAttributeString("start", "20261016120000 +0300")
+$writer.WriteAttributeString("stop", "20261016130000 +0300")
+$writer.WriteAttributeString("channel", "pervy")
+$writer.WriteElementString("title", "!!! ТЕСТОВЫЙ АРХИВ 16 ОКТЯБРЯ !!!")
+$writer.WriteEndElement()
 
 $writer.WriteEndElement()
 $writer.WriteEndDocument()
