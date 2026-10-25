@@ -31,6 +31,15 @@ function Remove-DtdReference($filePath) {
 
 Remove-DtdReference $tempPath
 
+# Проверяем: если локальный файл существует, но внутри него LFS-указатель (не XML) — удаляем его
+if (Test-Path $localPath) {
+    $firstLine = Get-Content $localPath -TotalCount 1
+    if (-not $firstLine -or -not $firstLine.Trim().StartsWith("<?xml")) {
+        Write-Host "Local file is an LFS pointer or invalid. Removing it." -ForegroundColor Yellow
+        Remove-Item $localPath -Force
+    }
+}
+
 if (-not (Test-Path $localPath)) {
     Write-Host "Local file not found. Moving temp to local." -ForegroundColor Green
     Move-Item $tempPath $localPath -Force
@@ -96,14 +105,6 @@ while ($readerNew.Read()) {
     }
 }
 $readerNew.Close()
-
-# Вставка тестовой передачи на 16 октября для проверки
-$writer.WriteStartElement("programme")
-$writer.WriteAttributeString("start", "20261016120000 +0300")
-$writer.WriteAttributeString("stop", "20261016130000 +0300")
-$writer.WriteAttributeString("channel", "pervy")
-$writer.WriteElementString("title", "!!! ТЕСТОВЫЙ АРХИВ 16 ОКТЯБРЯ !!!")
-$writer.WriteEndElement()
 
 $writer.WriteEndElement()
 $writer.WriteEndDocument()
