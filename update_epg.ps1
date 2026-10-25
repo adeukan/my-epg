@@ -1,8 +1,11 @@
 $epgUrl = "http://epg.online/epg.xml.gz"
-$localPath = "C:\EPG\my_14day_epg.xml"
-$gzPath = "C:\EPG\temp.xml.gz"
-$tempPath = "C:\EPG\temp.xml"
-$mergedPath = "C:\EPG\merged_temp.xml"
+$scriptDir = $PSScriptRoot
+if (-not $scriptDir) { $scriptDir = $PWD.Path }
+
+$localPath = Join-Path $scriptDir "my_14day_epg.xml"
+$gzPath = Join-Path $scriptDir "temp.xml.gz"
+$tempPath = Join-Path $scriptDir "temp.xml"
+$mergedPath = Join-Path $scriptDir "merged_temp.xml"
 
 Write-Host "Downloading EPG..." -ForegroundColor Cyan
 Invoke-WebRequest -Uri $epgUrl -OutFile $gzPath
